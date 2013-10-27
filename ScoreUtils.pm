@@ -1,7 +1,43 @@
 package ScoreUtils;
-@EXPORT = qw(ReadNonterminal);
+@EXPORT = qw(Min Max ReadNonterminal);
 
 use strict;
+
+
+# $min = Min($item1, $item2, ...)
+#    Returns the numerical minimum from an arbitrarily long parameter list.
+sub Min
+{
+    my @List = @_;
+    if($#List == -1) { return 0; }
+    else
+    {
+	my $min = $List[0];
+	foreach my $item (@List)
+	{
+	    if($item < $min) { $min = $item; }
+	}
+	return $min;
+    }
+}
+
+
+# $max = Max($item1, $item2, ...)
+#    Returns the numerical maximum from an arbitrarily long parameter list.
+sub Max
+{
+    my @List = @_;
+    if($#List == -1) { return 0; }
+    else
+    {
+	my $max = $List[0];
+	foreach my $item (@List)
+	{
+	    if($item > $max) { $max = $item; }
+	}
+	return $max;
+    }
+}
 
 
 # ($src, $tgt) = ReadNonterminal($bracketString)
