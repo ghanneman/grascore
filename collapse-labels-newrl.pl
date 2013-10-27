@@ -7,76 +7,80 @@ use bytes;
 # Check usage:
 if($#ARGV != 1)
 {
-	print STDERR "Usage: cat <new-rule-learner-output> | \\ \n";
-	print STDERR "       perl $0 <src-pos-map-file> <tgt-pos-map-file>\n";
-	print STDERR "Output goes to standard out.\n";
-	exit;
+    print STDERR "Usage: cat <new-rule-learner-output> | \\ \n";
+    print STDERR "       perl $0 <src-pos-map-file> <tgt-pos-map-file>\n";
+    print STDERR "Output goes to standard out.\n";
+    exit;
 }
 
-# Create label maps:
+# Create source label map:
 my %SrcLabelMap = ();
 open(my $SPFILE, $ARGV[0]) or die "Can't open input source label map file $ARGV[0]: $!";
 while(my $line = <$SPFILE>)
 {
-	my ($full, $mapped) = split(/\s+/, $line);
-	$SrcLabelMap{$full} = $mapped;
+    my ($full, $mapped) = split(/\s+/, $line);
+    $SrcLabelMap{$full} = $mapped;
 }
+close($SPFILE);
+
+# Create target label map:
 my %TgtLabelMap = ();
 open(my $TPFILE, $ARGV[1]) or die "Can't open input target label map file $ARGV[1]: $!";
 while(my $line = <$TPFILE>)
 {
-	my ($full, $mapped) = split(/\s+/, $line);
-	$TgtLabelMap{$full} = $mapped;
+    my ($full, $mapped) = split(/\s+/, $line);
+    $TgtLabelMap{$full} = $mapped;
 }
+close($TPFILE);
 
 # Process rule-instance file and change labels:
 #G ||| [PP::PP] ||| de [D::DT,1] session ||| of [D::DT,1] session ||| 0-0 1-1 2-2 ||| OO OO
 while(my $line = <STDIN>)
 {
-	# Break apart line:
-	chomp $line;
-	next if(substr($line, 0, 9) eq "Sentence ");
-	my ($type, $lhs, $srcRhs, $tgtRhs, $aligns, $nodeTypes) =
-	    split(/ \|\|\| /, $line);
-	my @SrcRhsList = split(/\s+/, $srcRhs);
-	my @TgtRhsList = split(/\s+/, $tgtRhs);
-	my ($srcLhs, $tgtLhs) = ParseJoshuaPOSPair($lhs);
+    # Break apart line:
+    chomp $line;
+    next if(substr($line, 0, 9) eq "Sentence ");
+    my ($type, $lhs, $srcRhs, $tgtRhs, $aligns, $nodeTypes) =
+	split(/ \|\|\| /, $line);
+    my @SrcRhsList = split(/\s+/, $srcRhs);
+    my @TgtRhsList = split(/\s+/, $tgtRhs);
+    my ($srcLhs, $tgtLhs) = ParseJoshuaPOSPair($lhs);
 
-	# TEMP PRINT BLOCK:
-	#print "Got [$srcLhs]:" . ":[$tgtLhs] -> [@srcRhsList]::[@tgtRhsList]\n";
+    # TEMP PRINT BLOCK:
+    #print "Got [$srcLhs]:" . ":[$tgtLhs] -> [@srcRhsList]::[@tgtRhsList]\n";
 
-	# Replace labels on the left-hand side:
-	if(exists($SrcLabelMap{$srcLhs})) { $srcLhs = $SrcLabelMap{$srcLhs}; }
-	if(exists($TgtLabelMap{$tgtLhs})) { $tgtLhs = $TgtLabelMap{$tgtLhs}; }
-
-	# Replace labels on the right-hand side:
-	foreach my $i (0..$#SrcRhsList)
+    # Replace labels on the left-hand side:
+    if(exists($SrcLabelMap{$srcLhs})) { $srcLhs = $SrcLabelMap{$srcLhs}; }
+    if(exists($TgtLabelMap{$tgtLhs})) { $tgtLhs = $TgtLabelMap{$tgtLhs}; }
+    
+    # Replace labels on the right-hand side:
+    foreach my $i (0..$#SrcRhsList)
+    {
+	if($SrcRhsList[$i] =~ /^\[(.+),(\d+)\]$/)
 	{
-		if($SrcRhsList[$i] =~ /^\[(.+),(\d+)\]$/)
-		{
-			my $posPair = $1;
-			my $coindex = $2;
-			my ($src, $tgt) = ParseJoshuaPOSPair($posPair);
-			if(exists($SrcLabelMap{$src})) { $src = $SrcLabelMap{$src}; }
-			if(exists($TgtLabelMap{$tgt})) { $tgt = $TgtLabelMap{$tgt}; }
-			$SrcRhsList[$i] = "[$src:" . ":$tgt,$coindex]";
-		}
+	    my $posPair = $1;
+	    my $coindex = $2;
+	    my ($src, $tgt) = ParseJoshuaPOSPair($posPair);
+	    if(exists($SrcLabelMap{$src})) { $src = $SrcLabelMap{$src}; }
+	    if(exists($TgtLabelMap{$tgt})) { $tgt = $TgtLabelMap{$tgt}; }
+	    $SrcRhsList[$i] = "[$src:" . ":$tgt,$coindex]";
 	}
-	foreach my $i (0..$#TgtRhsList)
+    }
+    foreach my $i (0..$#TgtRhsList)
+    {
+	if($TgtRhsList[$i] =~ /^\[(.+),(\d+)\]$/)
 	{
-		if($TgtRhsList[$i] =~ /^\[(.+),(\d+)\]$/)
-		{
-			my $posPair = $1;
-			my $coindex = $2;
-			my ($src, $tgt) = ParseJoshuaPOSPair($posPair);
-			if(exists($SrcLabelMap{$src})) { $src = $SrcLabelMap{$src}; }
-			if(exists($TgtLabelMap{$tgt})) { $tgt = $TgtLabelMap{$tgt}; }
-			$TgtRhsList[$i] = "[$src:" . ":$tgt,$coindex]";
-		}
+	    my $posPair = $1;
+	    my $coindex = $2;
+	    my ($src, $tgt) = ParseJoshuaPOSPair($posPair);
+	    if(exists($SrcLabelMap{$src})) { $src = $SrcLabelMap{$src}; }
+	    if(exists($TgtLabelMap{$tgt})) { $tgt = $TgtLabelMap{$tgt}; }
+	    $TgtRhsList[$i] = "[$src:" . ":$tgt,$coindex]";
 	}
-
-	# Reprint line:
-	print "$type\t[$srcLhs:" . ":$tgtLhs]\t@SrcRhsList\t@TgtRhsList\t$aligns\t1\n";
+    }
+    
+    # Reprint line:
+    print "$type\t[$srcLhs:" . ":$tgtLhs]\t@SrcRhsList\t@TgtRhsList\t$aligns\t1\n";
 }
 
 
