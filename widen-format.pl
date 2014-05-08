@@ -1,3 +1,4 @@
+use lib "/home/ghannema/tools/git/grascore";
 use ScoreUtils;
 use strict;
 
