@@ -171,3 +171,32 @@ sub ScoreEntropy
 	print "$r $entropy\n";
     }
 }
+
+
+# ScorePerp(\%RulesToNumerCols, \%NumerColsToCounts, $denomCount):
+#    Takes as input (1) a mapping from full rules all sharing the same
+#    denominator value to their numerator values, (2) a mapping from numerator
+#    values to numerator counts, and (3) the total count of the relevant
+#    denominator.  Prints out each of the rules found plus the perplexity over
+#    the probabilities for this denominator.
+sub ScorePerp
+{
+    # Get parameters (Hungarian "h" denotes hash reference):
+    my $hRulesToNumerCols = shift @_;
+    my $hNumerColsToCounts = shift @_;
+    my $denomCount = shift @_;
+
+    # Now compute entropy over the unique numerators:
+    my $entropy = 0;
+    foreach my $numer (keys %{$hNumerColsToCounts})
+    {
+	my $prob = ${$hNumerColsToCounts}{$numer} / $totalCount;
+	$entropy = $entropy - ($prob * log($prob) / log(2));
+    }
+
+    # Add perplexity to each rule with this denominator:
+    foreach my $r (keys %{$hRulesToNumerCols})
+    {
+	print "$r " . (2**$entropy) . "\n";
+    }
+}

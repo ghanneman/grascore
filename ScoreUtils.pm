@@ -1,7 +1,16 @@
 package ScoreUtils;
-@EXPORT = qw(Min Max ReadNonterminal);
+@EXPORT = qw(COUNT_SNAME Min Max ReadNonterminal);
 
 use strict;
+
+
+# Name (from score-names file) for rule count:
+# NOTE: This is terrible, but apparently variables aren't accessible outside
+# the module -- at least not with "use strict" on...
+sub COUNT_SNAME
+{
+    return "count";
+}
 
 
 # $min = Min($item1, $item2, ...)

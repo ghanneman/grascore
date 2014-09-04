@@ -25,6 +25,7 @@ my %Types = (
     "prob" => "compute p($SCORE_FLAG | $COND_FLAG)",
     "counts" => "compute #($SCORE_FLAG, $COND_FLAG) and #($COND_FLAG)",
     "entropy" => "compute H($SCORE_FLAG) within $COND_FLAG",
+    "perp" => "compute 2^H($SCORE_FLAG) within $COND_FLAG",
     "gain" => "x",
     );
 
