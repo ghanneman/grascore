@@ -11,6 +11,8 @@ my $COND_FLAG = "--cond";       # denominator
 my $TYPE_FLAG = "--type";       # type of score to compute
 my $NAME_FLAG = "--name";       # name of this feature
 my $SNFILE_FLAG = "--sn-file";  # file of score names
+my $CLOG_FLAG = "--count-log";  # file of denominator counts
+
 # Official column names, to be used as arguments to the above:
 # NOTE: Indexes are 0-based for ease of Perl-internal use!
 my %Columns = (
@@ -40,6 +42,7 @@ sub PrintUsage
     print STDERR "        $TYPE_FLAG <type> \\\n";
     print STDERR "        $NAME_FLAG <feat-name>\n";
     print STDERR "        $SNFILE_FLAG <sn-file>\n";
+    print STDERR "        [$CLOG_FLAG <log-file>]\n";
     print STDERR "Column names for <col-name>:\n";
     foreach my $col (keys %Columns) { print STDERR "    $col\n"; }
     print STDERR "Type names for <type>:\n";
@@ -49,7 +52,9 @@ sub PrintUsage
     }
     print STDERR "\nComputes the feature indicated by <type> and calls it <feat-name>.  The input\n";
     print STDERR "file <sn-file> contains a space-separated list of scores already appearing\n";
-    print STDERR "in <rules>; it will be OVERWRITTEN with an updated list upon output.\n\n";
+    print STDERR "in <rules>; it will be OVERWRITTEN with an updated list upon output.  The\n";
+    print STDERR "optional <log-file> will contain a list of denominator values from the\n";
+    print STDERR "feature and their counts.\n\n";
     print STDERR "WARNING:  Input <rules> must be sorted by the $COND_FLAG columns!\n";
 }
 
@@ -66,6 +71,7 @@ sub GetParams
     my $name = "";
     my $scoreType = "";
     my $snFile = "";
+    my $clogFile = "";
     for(my $i = 0; $i <= $#Args; $i++)
     {
 	if($Args[$i] eq $SCORE_FLAG)
@@ -135,12 +141,24 @@ sub GetParams
 	}
 	elsif($Args[$i] eq $SNFILE_FLAG)
 	{
-	    # Found the name of the score-names files:
+	    # Found the name of the score-names file:
 	    $i++;
 	    if($snFile eq "") { $snFile = $Args[$i]; }
 	    else
 	    {
 		print STDERR "ERROR:  Tried to specify the score-names file twice ('$snFile' vs. '$Args[$i]').  Pick just one!\n";
+		PrintUsage();
+		exit(1);
+	    }
+	}
+	elsif($Args[$i] eq $CLOG_FLAG)
+	{
+	    # Found the name of the count-log file:
+	    $i++;
+	    if($clogFile eq "") { $clogFile = $Args[$i]; }
+	    else
+	    {
+		print STDERR "ERROR:  Tried to specify the count-log file twice ('$clogFile' vs '$Args[$i]').  Pick just one!\n";
 		PrintUsage();
 		exit(1);
 	    }
@@ -191,7 +209,9 @@ sub GetParams
     print STDERR "name : [$name]\n";
     print STDERR "type : [$scoreType]\n";
     print STDERR "snfile : [$snFile]\n";
+    print STDERR "clogfile : [$clogFile]\n";
     ###################
-    return ('num' => "@NumCols", 'denom' => "@DenomCols", 'name' => $name,
-	    'type' => $scoreType, 'snfile' => $snFile);
+    return ('num' => "@NumCols", 'denom' => "@DenomCols",
+	    'name' => $name, 'type' => $scoreType,
+	    'snfile' => $snFile, 'clogfile' => $clogFile);
 }

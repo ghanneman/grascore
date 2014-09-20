@@ -44,6 +44,15 @@ if(!exists(&{"Score$scoreFn"}))
     exit(1);
 }
 
+# If we're writing a count log, open it:
+my $CLOG_FILE;
+if($Params{'clogfile'} ne "")
+{
+    open($CLOG_FILE, "> $Params{'clogfile'}") or
+	die "Can't open output count-log file $Params{'clogfile'}: $!";
+    binmode($CLOG_FILE, ":utf8");
+}
+
 # Accumulator for multiple rules with the same denominator columns:
 my %RuleNumerCols = ();
 my %NumerColCounts = ();
@@ -70,6 +79,7 @@ while(my $line = <STDIN>)
 	if($totalCount > 0)
 	{
 	    eval "Score$scoreFn" . '(\%RuleNumerCols, \%NumerColCounts, $totalCount);';
+	    if($CLOG_FILE) { print $CLOG_FILE "$currDenom\t$totalCount\n"; }
 	}
 
 	# Reset accumulator ("undef" seems faster than "= ()"):
@@ -89,7 +99,9 @@ while(my $line = <STDIN>)
 if($totalCount > 0)
 {
     eval "Score$scoreFn" . '(\%RuleNumerCols, \%NumerColCounts, $totalCount);';
+    if($CLOG_FILE) { print $CLOG_FILE "$currDenom\t$totalCount\n"; }
 }
+if($CLOG_FILE) { close($CLOG_FILE); }
 
 # Write out new list of score names:
 open($FILE, "> $Params{'snfile'}") or die "Can't open output file $Params{'snfile'}: $!";
